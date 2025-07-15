@@ -1,10 +1,10 @@
 use crate::{
-    event::{AppEvent, Event, EventHandler},
     Sequence, Sequences,
+    event::{AppEvent, Event, EventHandler},
 };
 use ratatui::{
-    crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
     DefaultTerminal,
+    crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
 };
 
 /// Application.
