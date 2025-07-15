@@ -20,7 +20,7 @@ pub struct App {
     /// all known/programmed sequences
     pub sequences: Sequences,
     /// the index of the active sequence
-    pub displaying_sequence: usize,
+    pub displaying_sequences: Vec<usize>,
     /// is the app outputing midi data
     pub playing: bool,
     /// which sequences are playing.
@@ -38,10 +38,10 @@ impl Default for App {
             step: 0,
             events: EventHandler::new(),
             sequences: vec![Sequence::new("Sequence-0".into())],
-            displaying_sequence: 0,
+            displaying_sequences: vec![0],
             playing: false,
             playing_sequences: Vec::new(),
-            bpm: 99,
+            bpm: 120,
             vertical_scroll_state: ScrollbarState::default(),
             vertical_scroll: 0,
         }

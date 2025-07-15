@@ -6,7 +6,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::App;
+use crate::{app::App, Sequence};
 
 pub fn display_note(note: u8) -> String {
     let octave = note / 12;
@@ -29,26 +29,30 @@ impl App {
     }
 
     pub fn main_section(&mut self, frame: &mut Frame, area: Rect) {
-        let layout = Layout::horizontal([
-            // Constraint::Ratio(1, 3),
-            Constraint::Min(16),
-            // TODO: one for every sequence being viewed.
-            Constraint::Min(12),
-            // Constraint::Min(16),
-            // Constraint::Ratio(1, 3),
-            // Constraint::Ratio(1, 3),
-        ])
-        .split(area);
+        let mut layout = vec![Constraint::Min(16)];
+        layout.extend(
+            self.displaying_sequences
+                .iter()
+                .map(|_| Constraint::Min(12)),
+        );
+        let layout = Layout::horizontal(layout).split(area);
 
         // sequence list (with default midi output and channel displayed)
         self.sequences_display(frame, layout[0]);
         // sequence data (the notes) with the current step highlighted.
         // TODO: one for every sequence being viewed.
-        self.sequence_display(frame, layout[1])
+        self.displaying_sequences
+            .clone()
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, seq_i)| {
+                self.sequence_display(frame, layout[i + 1], &self.sequences[seq_i].clone())
+            });
+        // self.sequence_display(frame, layout[1])
     }
 
-    pub fn sequence_display(&mut self, frame: &mut Frame, area: Rect) {
-        let selected = self.sequences[self.displaying_sequence].clone();
+    pub fn sequence_display(&mut self, frame: &mut Frame, area: Rect, selected: &Sequence) {
+        // let selected = self.sequences[self.displaying_sequences].clone();
         let seqs: Vec<ListItem> = selected
             .notes
             .iter()
@@ -68,7 +72,7 @@ impl App {
             List::new(seqs).block(
                 Block::bordered()
                     .border_type(BorderType::Rounded)
-                    .title_top(selected.name),
+                    .title_top(selected.name.clone()),
             ),
             area,
         );
@@ -76,7 +80,7 @@ impl App {
 
     pub fn sequences_display(&mut self, frame: &mut Frame, area: Rect) {
         // let create_block = |title: &'static str| Block::bordered().gray().title(title.bold());
-        let selected = self.displaying_sequence;
+        let playing = &self.playing_sequences;
         self.vertical_scroll_state = self
             .vertical_scroll_state
             .content_length(self.sequences.len());
@@ -90,7 +94,7 @@ impl App {
                 } else {
                     ("Default".into(), 0)
                 };
-                let prefix = if i == selected {
+                let prefix = if playing.contains(&i) {
                     "* ".to_string()
                 } else {
                     "".to_string()
@@ -158,7 +162,7 @@ impl App {
             layout[0],
         );
 
-        for i in 1..=16 {
+        for i in 0..16 {
             let color = if i == self.step && self.playing {
                 Color::Green
             } else {
@@ -174,7 +178,7 @@ impl App {
                     )
                     .fg(color)
                     .centered(),
-                layout[i as usize],
+                layout[(i + 1) as usize],
             );
         }
     }
