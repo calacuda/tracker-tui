@@ -1,8 +1,9 @@
 use ratatui::{
-    Frame,
     layout::{Constraint, Layout, Rect},
     style::{Color, Stylize},
-    widgets::{Block, BorderType, List, ListItem, Paragraph},
+    symbols::scrollbar::VERTICAL,
+    widgets::{Block, BorderType, List, ListItem, Paragraph, Scrollbar, ScrollbarOrientation},
+    Frame,
 };
 
 use crate::app::App;
@@ -29,18 +30,21 @@ impl App {
 
     pub fn main_section(&mut self, frame: &mut Frame, area: Rect) {
         let layout = Layout::horizontal([
-            Constraint::Ratio(1, 3),
-            Constraint::Ratio(1, 3),
-            Constraint::Ratio(1, 3),
+            // Constraint::Ratio(1, 3),
+            Constraint::Min(16),
+            // TODO: one for every sequence being viewed.
+            Constraint::Min(12),
+            // Constraint::Min(16),
+            // Constraint::Ratio(1, 3),
+            // Constraint::Ratio(1, 3),
         ])
         .split(area);
 
         // sequence list (with default midi output and channel displayed)
         self.sequences_display(frame, layout[0]);
         // sequence data (the notes) with the current step highlighted.
+        // TODO: one for every sequence being viewed.
         self.sequence_display(frame, layout[1])
-        // TODO: settings window.
-        //  - BPM,
     }
 
     pub fn sequence_display(&mut self, frame: &mut Frame, area: Rect) {
@@ -64,15 +68,19 @@ impl App {
             List::new(seqs).block(
                 Block::bordered()
                     .border_type(BorderType::Rounded)
-                    .title_top("Sequences"),
+                    .title_top(selected.name),
             ),
             area,
         );
     }
 
     pub fn sequences_display(&mut self, frame: &mut Frame, area: Rect) {
+        // let create_block = |title: &'static str| Block::bordered().gray().title(title.bold());
         let selected = self.displaying_sequence;
-        let seqs: Vec<ListItem> = self
+        self.vertical_scroll_state = self
+            .vertical_scroll_state
+            .content_length(self.sequences.len());
+        let seqs: Vec<String> = self
             .sequences
             .iter()
             .enumerate()
@@ -83,47 +91,74 @@ impl App {
                     ("Default".into(), 0)
                 };
                 let prefix = if i == selected {
-                    " * ".to_string()
+                    "* ".to_string()
                 } else {
                     "".to_string()
                 };
 
-                ListItem::new(format!("{}{prefix}\n{out_name} => {out_chan}", seq.name))
+                format!(">  {prefix}{}\n   {out_name} => {out_chan}", seq.name)
+                // .block(create_block("Vertical scrollbar with arrows"))
             })
             .collect();
+        let text = Paragraph::new(seqs.join("\n\n"));
 
         frame.render_widget(
-            List::new(seqs).block(
+            // List::new(seqs)
+            text.block(
                 Block::bordered()
                     .border_type(BorderType::Rounded)
                     .title_top("Sequences"),
-            ),
+            )
+            .scroll((self.vertical_scroll as u16, 0)),
             area,
+        );
+
+        frame.render_stateful_widget(
+            Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .symbols(VERTICAL)
+                .track_symbol(None)
+                .begin_symbol(Some("↑"))
+                .end_symbol(Some("↓")),
+            area,
+            &mut self.vertical_scroll_state,
         );
     }
 
     pub fn build_step_view(&mut self, frame: &mut Frame, area: Rect) {
         let layout = Layout::horizontal([
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
-            Constraint::Ratio(1, 16),
+            Constraint::Min(6),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
+            Constraint::Min(3),
         ])
         .split(area);
 
-        for i in 0..16 {
+        frame.render_widget(
+            Paragraph::new(format!("{}", self.bpm))
+                .block(
+                    Block::bordered()
+                        .border_type(BorderType::Rounded)
+                        .title("BPM"), // .border_style(Color::Reset),
+                )
+                // .fg(color)
+                .centered(),
+            layout[0],
+        );
+
+        for i in 1..=16 {
             let color = if i == self.step && self.playing {
                 Color::Green
             } else {

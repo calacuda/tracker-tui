@@ -1,10 +1,11 @@
 use crate::{
-    Sequence, Sequences,
     event::{AppEvent, Event, EventHandler},
+    Sequence, Sequences,
 };
 use ratatui::{
-    DefaultTerminal,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
+    widgets::ScrollbarState,
+    DefaultTerminal,
 };
 
 /// Application.
@@ -24,6 +25,10 @@ pub struct App {
     pub playing: bool,
     /// which sequences are playing.
     pub playing_sequences: Vec<usize>,
+    /// the playback BPM
+    pub bpm: usize,
+    pub vertical_scroll_state: ScrollbarState,
+    pub vertical_scroll: usize,
 }
 
 impl Default for App {
@@ -32,10 +37,13 @@ impl Default for App {
             running: true,
             step: 0,
             events: EventHandler::new(),
-            sequences: vec![Sequence::new("0".into())],
+            sequences: vec![Sequence::new("Sequence-0".into())],
             displaying_sequence: 0,
             playing: false,
             playing_sequences: Vec::new(),
+            bpm: 99,
+            vertical_scroll_state: ScrollbarState::default(),
+            vertical_scroll: 0,
         }
     }
 }
