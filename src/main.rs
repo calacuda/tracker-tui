@@ -2,6 +2,7 @@ use crate::app::App;
 
 pub mod app;
 pub mod event;
+pub mod midi_out;
 pub mod ui;
 
 pub type MidiNote = u8;
